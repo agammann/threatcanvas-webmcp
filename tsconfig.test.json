@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "outDir": ".test-dist",
+    "rootDir": ".",
+    "skipLibCheck": true
+  },
+  "include": ["lib/domain.ts", "lib/seed-data.ts", "lib/workspace.ts", "tests/**/*.ts"]
+}
