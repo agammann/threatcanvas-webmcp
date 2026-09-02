@@ -28,6 +28,7 @@ export type WorkspaceApi = {
   reprioritize: (findingIds: string[], priorityOrder: string[], reason: string, actor: Actor) => Finding[];
   calculateRisk: () => ReturnType<typeof riskSummary>;
   createSprint: (findingIds: string[], sprintName: string, capacityDays: number, actor: Actor) => WorkspaceState['sprint'];
+  optimizeSprint: (sprintName: string, capacityDays: number, prioritizeBy: RebalanceMode, actor: Actor) => WorkspaceState['sprint'];
   removeFromSprint: (findingId: string, reason: string, actor: Actor) => WorkspaceState['sprint'];
   rebalanceSprint: (capacityDays: number, prioritizeBy: RebalanceMode, actor: Actor) => WorkspaceState['sprint'];
   setHumanLock: (findingId: string, locked: boolean, reason: string, actor: Actor) => Finding;
@@ -154,7 +155,14 @@ export function applyCreateSprint(state: WorkspaceState, findingIds: string[], s
   const ids = assertStringArray(findingIds, 'findingIds', { min: 1, max: 18 });
   const name = assertText(sprintName, 'sprintName', 2, 80);
   const capacity = assertNumber(capacityDays, 'capacityDays', 0.5, 60);
-  ids.forEach((id) => requireFinding(state, id));
+  ids.forEach((id) => {
+    const finding = requireFinding(state, id);
+    if (finding.status === 'resolved') throw new Error(`${id} is already resolved and cannot be scheduled.`);
+    if (actor === 'agent' && finding.status === 'accepted') throw new Error(`${id} is accepted risk and cannot be automatically scheduled.`);
+    if (actor === 'agent' && finding.humanLocked && !state.sprint?.findingIds.includes(id)) {
+      throw new Error(`${id} is human locked and cannot be automatically added to a sprint.`);
+    }
+  });
   const effort = ids.reduce((sum, id) => sum + requireFinding(state, id).effortDays, 0);
   if (effort > capacity) throw new Error(`Selected findings require ${effort} engineering days, exceeding the ${capacity}-day capacity.`);
   const now = new Date().toISOString();
@@ -164,6 +172,48 @@ export function applyCreateSprint(state: WorkspaceState, findingIds: string[], s
     findings: state.findings.map((finding) => (ids.includes(finding.id) && finding.status !== 'resolved' ? { ...finding, status: 'scheduled' as const } : finding)),
   };
   return activity(next, actor, 'created remediation sprint', `${actor === 'agent' ? 'Agent' : 'Human'} created “${name}” with ${ids.length} findings in ${effort}/${capacity} days.`);
+}
+
+function sortSprintCandidates(findings: Finding[], prioritizeBy: RebalanceMode) {
+  return [...findings].sort((a, b) => {
+    if (prioritizeBy === 'effort') return a.effortDays - b.effortDays || priorityScore(b) - priorityScore(a);
+    if (prioritizeBy === 'risk_to_effort') return priorityScore(b) / b.effortDays - priorityScore(a) / a.effortDays;
+    return priorityScore(b) - priorityScore(a);
+  });
+}
+
+export function applyOptimizeSprint(state: WorkspaceState, sprintName: string, capacityDays: number, prioritizeBy: RebalanceMode, actor: Actor) {
+  const name = assertText(sprintName, 'sprintName', 2, 80);
+  const capacity = assertNumber(capacityDays, 'capacityDays', 0.5, 60);
+  assertEnum(prioritizeBy, 'prioritizeBy', ['risk', 'effort', 'risk_to_effort'] as const);
+
+  const preservedExclusions = state.sprint?.humanExcludedIds ?? [];
+  const lockedIn = state.sprint?.findingIds.filter((id) => requireFinding(state, id).humanLocked) ?? [];
+  const lockedOut = state.findings.filter((finding) => finding.humanLocked && !lockedIn.includes(finding.id)).map((finding) => finding.id);
+  const excluded = new Set([...preservedExclusions, ...lockedOut]);
+  const candidates = sortSprintCandidates(
+    state.findings.filter((finding) => finding.status !== 'resolved' && finding.status !== 'accepted' && !excluded.has(finding.id) && !lockedIn.includes(finding.id)),
+    prioritizeBy,
+  );
+
+  const selected = [...lockedIn];
+  let used = lockedIn.reduce((sum, id) => sum + requireFinding(state, id).effortDays, 0);
+  if (used > capacity) throw new Error(`Human-locked sprint items require ${used} engineering days, exceeding the ${capacity}-day capacity.`);
+  for (const finding of candidates) {
+    if (used + finding.effortDays <= capacity) {
+      selected.push(finding.id);
+      used += finding.effortDays;
+    }
+  }
+  if (selected.length === 0) throw new Error('No eligible findings fit within the requested sprint capacity.');
+
+  const now = new Date().toISOString();
+  const next: WorkspaceState = {
+    ...state,
+    sprint: { name, capacityDays: capacity, findingIds: selected, humanExcludedIds: preservedExclusions, createdAt: state.sprint?.createdAt ?? now, updatedAt: now },
+    findings: state.findings.map((finding) => (selected.includes(finding.id) && finding.status !== 'resolved' ? { ...finding, status: 'scheduled' as const } : finding)),
+  };
+  return activity(next, actor, 'optimized remediation sprint', `${actor === 'agent' ? 'Agent' : 'Human'} built “${name}” by ${prioritizeBy.replaceAll('_', ' ')} with ${selected.length} findings in ${used}/${capacity} days while preserving human decisions.`);
 }
 
 export function applyRemoveFromSprint(state: WorkspaceState, findingId: string, reason: string, actor: Actor) {
@@ -186,12 +236,10 @@ export function applyRebalanceSprint(state: WorkspaceState, capacityDays: number
   const lockedIn = state.sprint.findingIds.filter((id) => requireFinding(state, id).humanLocked);
   const lockedOut = state.findings.filter((f) => f.humanLocked && !state.sprint!.findingIds.includes(f.id)).map((f) => f.id);
   const excluded = new Set([...state.sprint.humanExcludedIds, ...lockedOut]);
-  const candidates = state.findings.filter((f) => f.status !== 'resolved' && !excluded.has(f.id) && !lockedIn.includes(f.id));
-  candidates.sort((a, b) => {
-    if (prioritizeBy === 'effort') return a.effortDays - b.effortDays || priorityScore(b) - priorityScore(a);
-    if (prioritizeBy === 'risk_to_effort') return priorityScore(b) / b.effortDays - priorityScore(a) / a.effortDays;
-    return priorityScore(b) - priorityScore(a);
-  });
+  const candidates = sortSprintCandidates(
+    state.findings.filter((f) => f.status !== 'resolved' && f.status !== 'accepted' && !excluded.has(f.id) && !lockedIn.includes(f.id)),
+    prioritizeBy,
+  );
   const selected = [...lockedIn];
   let used = lockedIn.reduce((sum, id) => sum + requireFinding(state, id).effortDays, 0);
   for (const finding of candidates) {
@@ -229,3 +277,4 @@ export function validateFindingDimensions(input: { severity?: unknown; exploitab
     status: input.status === undefined ? undefined : assertEnum(input.status, 'status', STATUSES) as FindingStatus,
   };
 }
+

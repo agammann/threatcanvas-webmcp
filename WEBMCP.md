@@ -14,7 +14,7 @@ ThreatCanvas exposes fourteen browser-native tools from the rendered page. The a
 | `compare_findings` | Write | Opens a visible comparison in the shared workspace |
 | `reprioritize_findings` | Write | Changes relative rank for an exact selected set; preserves locks |
 | `calculate_risk_summary` | Read | Calculates exposure, progress, distribution, and top findings |
-| `create_remediation_sprint` | Write | Creates a capacity-validated sprint and schedules selected items |
+| `create_remediation_sprint` | Write | Creates a capacity-validated sprint from explicit findings or automatically selects eligible work by risk, effort, or ratio |
 | `remove_from_remediation_sprint` | Write | Removes one item; human removals become preserved exclusions |
 | `rebalance_remediation_sprint` | Write | Fills capacity by risk, effort, or ratio while preserving human choices |
 | `mark_finding_human_locked` | Write | Locks or unlocks a finding with an auditable reason |
@@ -32,7 +32,7 @@ Start from a reset workspace and run these in order:
 1. **Read:** “List the critical and high findings, then inspect the authorization and touch-input findings. Explain the priority difference using evidence and score terms.”
 2. **Shared mutation:** “Add a note to F-101 that server-side authorization is the release blocker, then set it to investigating.”
 3. **Human boundary:** “Try to downgrade F-104 to low because exploitation needs physical interaction.” The tool must refuse because F-104 is human locked.
-4. **Planning:** “Build the highest-risk remediation sprint that fits within five engineering days.” The result should appear in the Remediation Sprint view and never exceed capacity.
+4. **Planning:** “Build the highest-risk remediation sprint that fits within five engineering days.” A single `create_remediation_sprint` call with `capacityDays: 5` and `prioritizeBy: "risk"` should persist F-101, F-114, F-109, and F-105 in the Remediation Sprint view, use exactly 5/5 days, and exclude accepted, resolved, and human-locked findings.
 5. **Preserved judgment:** Manually remove one sprint item in the UI, then ask: “Rebalance this sprint by risk-to-effort within five days.” The removed item must stay excluded.
 6. **Provenance:** “Summarize the latest activity and separate human decisions from agent actions.”
 
@@ -47,3 +47,4 @@ The manual application works without WebMCP. The agent tool surface requires a W
 - Score and types: `lib/domain.ts`
 - Human UI and persistence adapter: `components/threatcanvas-app.tsx`
 - WebMCP ambient types: `types/webmcp.d.ts`
+

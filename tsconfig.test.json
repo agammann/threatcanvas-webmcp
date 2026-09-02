@@ -8,5 +8,6 @@
     "rootDir": ".",
     "skipLibCheck": true
   },
-  "include": ["lib/domain.ts", "lib/seed-data.ts", "lib/workspace.ts", "tests/**/*.ts"]
+  "include": ["lib/domain.ts", "lib/seed-data.ts", "lib/workspace.ts", "lib/webmcp/register-tools.ts", "types/webmcp.d.ts", "tests/**/*.ts"]
 }
+

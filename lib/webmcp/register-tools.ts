@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { SEVERITIES, STATUSES, priorityFormula, priorityScore, type Finding } from '@/lib/domain';
-import { assertEnum, assertNumber, assertStringArray, assertText, type RebalanceMode, type WorkspaceApi } from '@/lib/workspace';
+import { SEVERITIES, STATUSES, priorityFormula, priorityScore, type Finding } from '../domain.js';
+import { assertEnum, assertNumber, assertStringArray, assertText, type RebalanceMode, type WorkspaceApi } from '../workspace.js';
 
 export const WEBMCP_TOOL_NAMES = [
   'list_findings',
@@ -70,15 +70,15 @@ export function createWebMcpTools(api: WorkspaceApi): WebMcpTool[] {
     {
       name: 'list_findings',
       title: 'List security findings',
-      description: 'List findings in the active ThreatCanvas workspace, optionally filtered by severity, status, component, tag, or minimum priority. Use this to triage the board before inspecting or changing individual findings.',
+      description: 'Returns findings from the active ThreatCanvas workspace, optionally filtered by severity, status, component, tag, or minimum priority. Results provide the board context needed for evidence review and remediation planning.',
       annotations: { readOnlyHint: true, untrustedContentHint: true },
       inputSchema: objectSchema({
-        severity: { type: 'string', enum: SEVERITIES },
-        status: { type: 'string', enum: STATUSES },
-        component: { type: 'string', maxLength: 120 },
-        tag: { type: 'string', maxLength: 60 },
-        minimumPriority: { type: 'number', minimum: 0, maximum: 100 },
-        limit: { type: 'integer', minimum: 1, maximum: 50 },
+        severity: { type: 'string', enum: SEVERITIES, description: 'Optional severity to match: critical, high, medium, or low.' },
+        status: { type: 'string', enum: STATUSES, description: 'Optional workflow status to match: open, investigating, accepted, scheduled, or resolved.' },
+        component: { type: 'string', maxLength: 120, description: 'Optional case-insensitive component name fragment.' },
+        tag: { type: 'string', maxLength: 60, description: 'Optional exact lowercase finding tag.' },
+        minimumPriority: { type: 'number', minimum: 0, maximum: 100, description: 'Optional minimum ThreatCanvas Priority Score from 0 through 100.' },
+        limit: { type: 'integer', minimum: 1, maximum: 50, description: 'Maximum number of findings to return; defaults to 20.' },
       }),
       execute: wrap((input) => {
         const severity = input.severity === undefined ? undefined : assertEnum(input.severity, 'severity', SEVERITIES);
@@ -94,7 +94,7 @@ export function createWebMcpTools(api: WorkspaceApi): WebMcpTool[] {
     {
       name: 'inspect_finding',
       title: 'Inspect a security finding',
-      description: 'Retrieve complete evidence, reasoning, remediation guidance, analyst notes, relationships, and scoring detail for one ThreatCanvas finding. Use this before recommending a decision or changing workspace state.',
+      description: 'Returns complete evidence, reasoning, remediation guidance, analyst notes, relationships, and scoring detail for one ThreatCanvas finding. The result supports an informed decision before workspace state changes.',
       annotations: { readOnlyHint: true, untrustedContentHint: true },
       inputSchema: objectSchema({ findingId }, ['findingId']),
       execute: wrap(({ findingId: value }) => {
@@ -106,9 +106,9 @@ export function createWebMcpTools(api: WorkspaceApi): WebMcpTool[] {
     {
       name: 'set_finding_severity',
       title: 'Set finding severity',
-      description: 'Change the severity assigned to a security finding in the active workspace. Use when the user explicitly accepts a severity decision. The action is auditable and will refuse to override a human-locked finding.',
+      description: 'Assigns an analyst-approved severity to a security finding and records the reason in the activity trail. Human-locked findings reject automatic severity changes.',
       annotations: { readOnlyHint: false, untrustedContentHint: false },
-      inputSchema: objectSchema({ findingId, severity: { type: 'string', enum: SEVERITIES }, reason }, ['findingId', 'severity', 'reason']),
+      inputSchema: objectSchema({ findingId, severity: { type: 'string', enum: SEVERITIES, description: 'New severity accepted by the analyst: critical, high, medium, or low.' }, reason }, ['findingId', 'severity', 'reason']),
       execute: wrap((input) => {
         const id = assertText(input.findingId, 'findingId', 5, 10);
         const severity = assertEnum(input.severity, 'severity', SEVERITIES);
@@ -119,9 +119,9 @@ export function createWebMcpTools(api: WorkspaceApi): WebMcpTool[] {
     {
       name: 'set_finding_status',
       title: 'Set finding status',
-      description: 'Change the workflow status of a ThreatCanvas finding to open, investigating, accepted, scheduled, or resolved. Use after the user chooses a disposition; include a reason for the activity record.',
+      description: 'Assigns an analyst-chosen workflow status to a ThreatCanvas finding and records the reason in the activity trail. Human-locked findings reject automatic status changes.',
       annotations: { readOnlyHint: false, untrustedContentHint: false },
-      inputSchema: objectSchema({ findingId, status: { type: 'string', enum: STATUSES }, reason }, ['findingId', 'status', 'reason']),
+      inputSchema: objectSchema({ findingId, status: { type: 'string', enum: STATUSES, description: 'New workflow status: open, investigating, accepted, scheduled, or resolved.' }, reason }, ['findingId', 'status', 'reason']),
       execute: wrap((input) => {
         const id = assertText(input.findingId, 'findingId', 5, 10);
         const status = assertEnum(input.status, 'status', STATUSES);
@@ -132,9 +132,9 @@ export function createWebMcpTools(api: WorkspaceApi): WebMcpTool[] {
     {
       name: 'add_finding_note',
       title: 'Add a finding note',
-      description: 'Attach analysis or context to a ThreatCanvas finding without changing its rating. Notes are visible to the analyst and returned as untrusted user-authored content in later inspections.',
+      description: 'Appends analysis or context to a ThreatCanvas finding without changing its rating. Notes remain visible to the analyst and return as untrusted user-authored content in later inspections.',
       annotations: { readOnlyHint: false, untrustedContentHint: true },
-      inputSchema: objectSchema({ findingId, note: { type: 'string', minLength: 2, maxLength: 1200 }, authorType: { type: 'string', enum: ['agent', 'human'], default: 'agent' } }, ['findingId', 'note']),
+      inputSchema: objectSchema({ findingId, note: { type: 'string', minLength: 2, maxLength: 1200, description: 'Analysis or contextual note to append to the finding.' }, authorType: { type: 'string', enum: ['agent', 'human'], default: 'agent', description: 'Provenance label for the note author; defaults to agent.' } }, ['findingId', 'note']),
       execute: wrap((input) => {
         const id = assertText(input.findingId, 'findingId', 5, 10);
         const note = assertText(input.note, 'note', 2, 1200);
@@ -146,9 +146,9 @@ export function createWebMcpTools(api: WorkspaceApi): WebMcpTool[] {
     {
       name: 'compare_findings',
       title: 'Compare security findings',
-      description: 'Compare two to six ThreatCanvas findings across severity, impact, exploitability, confidence, effort, and priority. The structured comparison also appears visibly in the shared workspace.',
+      description: 'Persists a visible comparison of two to six ThreatCanvas findings and returns their severity, impact, exploitability, confidence, effort, priority, and risk-to-effort values.',
       annotations: { readOnlyHint: false, untrustedContentHint: true },
-      inputSchema: objectSchema({ findingIds: { type: 'array', minItems: 2, maxItems: 6, uniqueItems: true, items: findingId } }, ['findingIds']),
+      inputSchema: objectSchema({ findingIds: { type: 'array', minItems: 2, maxItems: 6, uniqueItems: true, items: findingId, description: 'Two to six unique finding identifiers to compare visibly.' } }, ['findingIds']),
       execute: wrap((input) => {
         const ids = assertStringArray(input.findingIds, 'findingIds', { min: 2, max: 6 });
         const findings = api.compareFindings(ids, 'agent');
@@ -158,9 +158,9 @@ export function createWebMcpTools(api: WorkspaceApi): WebMcpTool[] {
     {
       name: 'reprioritize_findings',
       title: 'Reprioritize findings',
-      description: 'Set the relative priority order for a selected group of ThreatCanvas findings. Use after comparing them and obtaining user agreement. Human-locked findings cannot be moved automatically.',
+      description: 'Persists a user-approved relative priority order for a selected group of ThreatCanvas findings. Human-locked findings reject automatic reprioritization.',
       annotations: { readOnlyHint: false, untrustedContentHint: false },
-      inputSchema: objectSchema({ findingIds: { type: 'array', minItems: 2, maxItems: 18, uniqueItems: true, items: findingId }, priorityOrder: { type: 'array', minItems: 2, maxItems: 18, uniqueItems: true, items: findingId }, reason }, ['findingIds', 'priorityOrder', 'reason']),
+      inputSchema: objectSchema({ findingIds: { type: 'array', minItems: 2, maxItems: 18, uniqueItems: true, items: findingId, description: 'Complete set of unique finding identifiers being reordered.' }, priorityOrder: { type: 'array', minItems: 2, maxItems: 18, uniqueItems: true, items: findingId, description: 'The same finding identifiers in the approved highest-to-lowest priority order.' }, reason }, ['findingIds', 'priorityOrder', 'reason']),
       execute: wrap((input) => {
         const ids = assertStringArray(input.findingIds, 'findingIds', { min: 2, max: 18 });
         const order = assertStringArray(input.priorityOrder, 'priorityOrder', { min: ids.length, max: ids.length });
@@ -171,7 +171,7 @@ export function createWebMcpTools(api: WorkspaceApi): WebMcpTool[] {
     {
       name: 'calculate_risk_summary',
       title: 'Calculate risk summary',
-      description: 'Calculate the active workspace exposure score, severity distribution, remediation progress, and highest-priority findings using the transparent ThreatCanvas Priority Score.',
+      description: 'Returns the active workspace exposure score, severity distribution, remediation progress, and highest-priority findings using the transparent ThreatCanvas Priority Score.',
       annotations: { readOnlyHint: true, untrustedContentHint: false },
       inputSchema: objectSchema({}),
       execute: wrap(() => {
@@ -182,20 +182,30 @@ export function createWebMcpTools(api: WorkspaceApi): WebMcpTool[] {
     {
       name: 'create_remediation_sprint',
       title: 'Create remediation sprint',
-      description: 'Create a visible remediation sprint from selected findings and an engineering-day capacity. This schedules work but never marks findings resolved; over-capacity selections are rejected.',
+      description: 'Creates and persists a visible capacity-bounded remediation sprint. Omitted finding IDs trigger automatic selection by risk, effort, or risk-to-effort while preserving accepted risk, resolved work, human locks, and prior human exclusions. The action schedules work without marking findings resolved.',
       annotations: { readOnlyHint: false, untrustedContentHint: false },
-      inputSchema: objectSchema({ findingIds: { type: 'array', minItems: 1, maxItems: 18, uniqueItems: true, items: findingId }, sprintName: { type: 'string', minLength: 2, maxLength: 80 }, capacityDays: { type: 'number', minimum: 0.5, maximum: 60 } }, ['findingIds', 'sprintName', 'capacityDays']),
+      inputSchema: objectSchema({
+        findingIds: { type: 'array', minItems: 1, maxItems: 18, uniqueItems: true, items: findingId, description: 'Optional explicit findings to schedule. When omitted, ThreatCanvas automatically selects eligible findings.' },
+        sprintName: { type: 'string', minLength: 2, maxLength: 80, description: 'Visible sprint name; defaults to Priority reduction sprint.' },
+        capacityDays: { type: 'number', minimum: 0.5, maximum: 60, description: 'Hard engineering capacity from 0.5 through 60 days.' },
+        prioritizeBy: { type: 'string', enum: ['risk', 'effort', 'risk_to_effort'], default: 'risk', description: 'Automatic selection strategy used when findingIds is omitted; defaults to risk.' },
+      }, ['capacityDays']),
       execute: wrap((input) => {
-        const ids = assertStringArray(input.findingIds, 'findingIds', { min: 1, max: 18 });
-        const name = assertText(input.sprintName, 'sprintName', 2, 80);
+        const name = input.sprintName === undefined ? 'Priority reduction sprint' : assertText(input.sprintName, 'sprintName', 2, 80);
         const capacity = assertNumber(input.capacityDays, 'capacityDays', 0.5, 60);
-        return result({ ok: true, sprint: api.createSprint(ids, name, capacity, 'agent') });
+        const mode = input.prioritizeBy === undefined ? 'risk' : assertEnum(input.prioritizeBy, 'prioritizeBy', ['risk', 'effort', 'risk_to_effort'] as const) as RebalanceMode;
+        const sprint = input.findingIds === undefined
+          ? api.optimizeSprint(name, capacity, mode, 'agent')
+          : api.createSprint(assertStringArray(input.findingIds, 'findingIds', { min: 1, max: 18 }), name, capacity, 'agent');
+        if (!sprint) throw new Error('ThreatCanvas could not create the remediation sprint.');
+        const usedDays = sprint.findingIds.reduce((sum, id) => sum + api.inspectFinding(id).effortDays, 0);
+        return result({ ok: true, selection: input.findingIds === undefined ? 'automatic' : 'explicit', prioritizeBy: mode, usedDays, sprint });
       }),
     },
     {
       name: 'remove_from_remediation_sprint',
       title: 'Remove finding from sprint',
-      description: 'Remove one finding from the active remediation sprint with an auditable reason. Use to rebalance scope; the finding is not resolved or deleted.',
+      description: 'Removes one finding from the active remediation sprint and records an auditable reason. The finding remains in the workspace and is neither resolved nor deleted.',
       annotations: { readOnlyHint: false, untrustedContentHint: false },
       inputSchema: objectSchema({ findingId, reason }, ['findingId', 'reason']),
       execute: wrap((input) => result({ ok: true, sprint: api.removeFromSprint(assertText(input.findingId, 'findingId', 5, 10), assertText(input.reason, 'reason', 4, 500), 'agent') })),
@@ -203,9 +213,9 @@ export function createWebMcpTools(api: WorkspaceApi): WebMcpTool[] {
     {
       name: 'rebalance_remediation_sprint',
       title: 'Rebalance remediation sprint',
-      description: 'Recalculate the active remediation sprint for a capacity using risk, effort, or risk-to-effort. The algorithm preserves every human-locked inclusion or exclusion and every manual human removal.',
+      description: 'Recalculates the active remediation sprint for a capacity using risk, effort, or risk-to-effort. The algorithm preserves every human-locked inclusion or exclusion and every manual human removal.',
       annotations: { readOnlyHint: false, untrustedContentHint: false },
-      inputSchema: objectSchema({ capacityDays: { type: 'number', minimum: 0.5, maximum: 60 }, prioritizeBy: { type: 'string', enum: ['risk', 'effort', 'risk_to_effort'] } }, ['capacityDays', 'prioritizeBy']),
+      inputSchema: objectSchema({ capacityDays: { type: 'number', minimum: 0.5, maximum: 60, description: 'New hard engineering capacity from 0.5 through 60 days.' }, prioritizeBy: { type: 'string', enum: ['risk', 'effort', 'risk_to_effort'], description: 'Optimization strategy for the visible sprint.' } }, ['capacityDays', 'prioritizeBy']),
       execute: wrap((input) => {
         const capacity = assertNumber(input.capacityDays, 'capacityDays', 0.5, 60);
         const mode = assertEnum(input.prioritizeBy, 'prioritizeBy', ['risk', 'effort', 'risk_to_effort'] as const) as RebalanceMode;
@@ -215,9 +225,9 @@ export function createWebMcpTools(api: WorkspaceApi): WebMcpTool[] {
     {
       name: 'mark_finding_human_locked',
       title: 'Set human decision lock',
-      description: 'Lock or unlock a ThreatCanvas finding decision on the user’s explicit instruction. Automatic severity, status, and prioritization changes must respect locked findings.',
+      description: 'Sets or removes a human decision lock after an explicit analyst choice. Automatic severity, status, priority, and sprint-scope operations preserve locked findings.',
       annotations: { readOnlyHint: false, untrustedContentHint: false },
-      inputSchema: objectSchema({ findingId, locked: { type: 'boolean' }, reason }, ['findingId', 'locked', 'reason']),
+      inputSchema: objectSchema({ findingId, locked: { type: 'boolean', description: 'True to lock the finding decision; false to remove the lock.' }, reason }, ['findingId', 'locked', 'reason']),
       execute: wrap((input) => {
         if (typeof input.locked !== 'boolean') throw new Error('locked must be a boolean.');
         return result({ ok: true, finding: slimFinding(api.setHumanLock(assertText(input.findingId, 'findingId', 5, 10), input.locked, assertText(input.reason, 'reason', 4, 500), 'agent')) });
@@ -226,9 +236,9 @@ export function createWebMcpTools(api: WorkspaceApi): WebMcpTool[] {
     {
       name: 'get_activity_history',
       title: 'Get activity history',
-      description: 'Return recent human, agent, and system actions from the active ThreatCanvas review. Use to summarize what changed and distinguish analyst decisions from agent recommendations.',
+      description: 'Returns recent human, agent, and system actions from the active ThreatCanvas review, including provenance that distinguishes analyst decisions from agent recommendations.',
       annotations: { readOnlyHint: true, untrustedContentHint: true },
-      inputSchema: objectSchema({ limit: { type: 'integer', minimum: 1, maximum: 100 } }),
+      inputSchema: objectSchema({ limit: { type: 'integer', minimum: 1, maximum: 100, description: 'Maximum number of newest activity entries to return; defaults to 25.' } }),
       execute: wrap((input) => {
         const limit = input.limit === undefined ? 25 : assertNumber(input.limit, 'limit', 1, 100);
         return result({ ok: true, activity: api.getState().activity.slice(0, limit) });
@@ -237,7 +247,7 @@ export function createWebMcpTools(api: WorkspaceApi): WebMcpTool[] {
     {
       name: 'reset_demo_workspace',
       title: 'Reset demo workspace',
-      description: 'Reset the entire ThreatCanvas demo to its original seeded state. This discards notes, sprint changes, ratings, locks, and activity; use only when the user explicitly requests a demo reset.',
+      description: 'Restores the entire ThreatCanvas demo to its original seeded state after exact confirmation. The result contains only reset status and the restored finding count.',
       annotations: { readOnlyHint: false, untrustedContentHint: false },
       inputSchema: objectSchema({ confirmation: { type: 'string', const: 'RESET', description: 'Exact confirmation token RESET.' } }, ['confirmation']),
       execute: wrap((input) => {

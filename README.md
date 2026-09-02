@@ -22,11 +22,11 @@ Agents can:
 - list and inspect findings;
 - compare and reprioritize a selected set;
 - calculate a transparent risk summary;
-- create and rebalance capacity-aware remediation sprints;
+- create capacity-aware remediation sprints from an explicit selection or a one-call risk, effort, or risk-to-effort optimization;
 - add notes and propose status or severity changes;
 - retrieve activity history.
 
-Human locks are enforced in the domain layer. An agent cannot change a locked rating or move a locked finding. Manual sprint removals remain excluded during later automatic rebalancing.
+Human locks are enforced in the domain layer. An agent cannot change a locked rating or move a locked finding. Accepted risk and resolved work are excluded from automatic scheduling, while manual sprint removals remain excluded during later optimization and rebalancing.
 
 ## WebMCP implementation
 
@@ -82,3 +82,4 @@ Additional verified interface captures are in [`demo/screenshots`](./demo/screen
 ## License
 
 MIT — see [LICENSE](./LICENSE).
+

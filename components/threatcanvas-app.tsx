@@ -17,7 +17,7 @@ import {
 } from '@/lib/domain';
 import { createSeedWorkspace } from '@/lib/seed-data';
 import {
-  applyComparison, applyCreateSprint, applyLock, applyNote, applyRebalanceSprint,
+  applyComparison, applyCreateSprint, applyLock, applyNote, applyOptimizeSprint, applyRebalanceSprint,
   applyRemoveFromSprint, applyReprioritize, applySeverity, applyStatus,
   filterFindings, requireFinding, type RebalanceMode, type WorkspaceApi,
 } from '@/lib/workspace';
@@ -107,6 +107,7 @@ export function ThreatCanvasApp() {
     reprioritize: (findingIds, priorityOrder, reason, actor) => { const next = commit((state) => applyReprioritize(state, findingIds, priorityOrder, reason, actor)); return priorityOrder.map((id) => requireFinding(next, id)); },
     calculateRisk: () => riskSummary(workspaceRef.current.findings),
     createSprint: (findingIds, sprintName, capacityDays, actor) => commit((state) => applyCreateSprint(state, findingIds, sprintName, capacityDays, actor)).sprint,
+    optimizeSprint: (sprintName, capacityDays, prioritizeBy, actor) => commit((state) => applyOptimizeSprint(state, sprintName, capacityDays, prioritizeBy, actor)).sprint,
     removeFromSprint: (findingId, reason, actor) => commit((state) => applyRemoveFromSprint(state, findingId, reason, actor)).sprint,
     rebalanceSprint: (capacityDays, prioritizeBy, actor) => commit((state) => applyRebalanceSprint(state, capacityDays, prioritizeBy, actor)).sprint,
     setHumanLock: (findingId, locked, reason, actor) => requireFinding(commit((state) => applyLock(state, findingId, locked, reason, actor)), findingId),
@@ -126,10 +127,7 @@ export function ThreatCanvasApp() {
   const selectFinding = (id: string | null) => { syncState({ ...workspaceRef.current, selectedFindingId: id }); setNoteDraft(''); };
 
   const createSuggestedSprint = () => {
-    const candidates = [...workspace.findings].filter((finding) => finding.status !== 'resolved').sort((a, b) => priorityScore(b) / b.effortDays - priorityScore(a) / a.effortDays);
-    const ids: string[] = []; let used = 0;
-    for (const finding of candidates) if (used + finding.effortDays <= sprintCapacity) { ids.push(finding.id); used += finding.effortDays; }
-    api.createSprint(ids, 'Priority reduction sprint', sprintCapacity, 'human'); setView('sprint');
+    api.optimizeSprint('Priority reduction sprint', sprintCapacity, 'risk_to_effort', 'human'); setView('sprint');
   };
   const resetHumanWorkspace = () => { if (window.confirm('Reset all ThreatCanvas demo changes, notes, locks, sprint state, and activity?')) api.resetWorkspace('human'); };
   const navItems: Array<{ id: View; label: string; icon: typeof LayoutDashboard }> = [
@@ -189,3 +187,4 @@ export function ThreatCanvasApp() {
     <section><span className="tc-eyebrow">Human + agent notes</span><h3>Review context</h3>{selectedFinding.notes.length ? <div className="tc-notes">{selectedFinding.notes.map((note) => <article key={note.id}><span>{note.authorType === 'agent' ? <Bot /> : <UserRound />}</span><div><strong>{formatLabel(note.authorType)}</strong><p>{note.text}</p></div></article>)}</div> : <p className="tc-empty-copy">No notes yet.</p>}<div className="tc-add-note"><textarea value={noteDraft} onChange={(event) => setNoteDraft(event.target.value)} placeholder="Add analyst context…" /><Button onClick={() => { if (noteDraft.trim()) { api.addNote(selectedFinding.id, noteDraft, 'human'); setNoteDraft(''); } }}><MessageSquareText />Add note</Button></div></section>
   </div></dialog></div>}</main>;
 }
+

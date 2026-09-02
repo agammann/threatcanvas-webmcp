@@ -6,6 +6,7 @@ import { createSeedWorkspace } from '../lib/seed-data.js';
 import {
   applyCreateSprint,
   applyLock,
+  applyOptimizeSprint,
   applyRebalanceSprint,
   applyRemoveFromSprint,
   applySeverity,
@@ -62,6 +63,37 @@ void test('sprint creation rejects over-capacity selections', () => {
   );
 });
 
+void test('agent sprint creation preserves accepted, resolved, and human-locked decisions', () => {
+  const state = createSeedWorkspace();
+  assert.throws(
+    () => applyCreateSprint(state, ['F-104'], 'Locked sprint', 5, 'agent'),
+    /human locked/i,
+  );
+  assert.throws(
+    () => applyCreateSprint(state, ['F-108'], 'Accepted-risk sprint', 5, 'agent'),
+    /accepted risk/i,
+  );
+  assert.throws(
+    () => applyCreateSprint(state, ['F-117'], 'Resolved sprint', 5, 'agent'),
+    /already resolved/i,
+  );
+});
+
+void test('optimized sprint completes a five-day highest-risk plan in one operation', () => {
+  const optimized = applyOptimizeSprint(createSeedWorkspace(), 'Highest-risk sprint', 5, 'risk', 'agent');
+  assert.ok(optimized.sprint);
+  assert.deepEqual(optimized.sprint.findingIds, ['F-101', 'F-114', 'F-109', 'F-105']);
+  assert.equal(
+    optimized.sprint.findingIds.reduce((sum, id) => sum + optimized.findings.find((finding) => finding.id === id)!.effortDays, 0),
+    5,
+  );
+  assert.ok(!optimized.sprint.findingIds.includes('F-104'));
+  assert.ok(!optimized.sprint.findingIds.includes('F-108'));
+  assert.ok(!optimized.sprint.findingIds.includes('F-117'));
+  assert.equal(optimized.activity[0].actor, 'agent');
+  assert.match(optimized.activity[0].detail, /5\/5 days/);
+});
+
 void test('human removals remain excluded when an agent rebalances', () => {
   let state = applyCreateSprint(createSeedWorkspace(), ['F-103', 'F-105', 'F-106'], 'Focused sprint', 3, 'agent');
   state = applyRemoveFromSprint(state, 'F-105', 'Analyst deferred rate limiting until gateway ownership is clear.', 'human');
@@ -80,3 +112,4 @@ void test('finding filters compose severity, status, priority, and limit', () =>
   assert.equal(results.length, 2);
   assert.ok(results.every((finding) => finding.severity === 'high' && priorityScore(finding) >= 70));
 });
+
