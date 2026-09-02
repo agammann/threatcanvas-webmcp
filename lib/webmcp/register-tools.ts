@@ -30,7 +30,7 @@ const objectSchema = (properties: Record<string, unknown>, required: string[] = 
   additionalProperties: false,
 });
 
-const findingId = { type: 'string', pattern: '^F-[0-9]{3}$', description: 'ThreatCanvas finding identifier, for example F-104.' };
+const findingId = { type: 'string', pattern: '^F-[0-9]{3}$', description: 'Outpost finding identifier, for example F-104.' };
 const reason = { type: 'string', minLength: 4, maxLength: 500, description: 'Auditable reason for the requested decision.' };
 
 function slimFinding(finding: Finding) {
@@ -60,7 +60,7 @@ function wrap(execute: WebMcpTool['execute']): WebMcpTool['execute'] {
     try {
       return await execute(input, options);
     } catch (error) {
-      return result({ ok: false, error: error instanceof Error ? error.message : 'ThreatCanvas could not complete the tool call.' });
+      return result({ ok: false, error: error instanceof Error ? error.message : 'Outpost could not complete the tool call.' });
     }
   };
 }
@@ -70,14 +70,14 @@ export function createWebMcpTools(api: WorkspaceApi): WebMcpTool[] {
     {
       name: 'list_findings',
       title: 'List security findings',
-      description: 'Returns findings from the active ThreatCanvas workspace, optionally filtered by severity, status, component, tag, or minimum priority. Results provide the board context needed for evidence review and remediation planning.',
+      description: 'Returns findings from the active Outpost workspace, optionally filtered by severity, status, component, tag, or minimum priority. Results provide the board context needed for evidence review and remediation planning.',
       annotations: { readOnlyHint: true, untrustedContentHint: true },
       inputSchema: objectSchema({
         severity: { type: 'string', enum: SEVERITIES, description: 'Optional severity to match: critical, high, medium, or low.' },
         status: { type: 'string', enum: STATUSES, description: 'Optional workflow status to match: open, investigating, accepted, scheduled, or resolved.' },
         component: { type: 'string', maxLength: 120, description: 'Optional case-insensitive component name fragment.' },
         tag: { type: 'string', maxLength: 60, description: 'Optional exact lowercase finding tag.' },
-        minimumPriority: { type: 'number', minimum: 0, maximum: 100, description: 'Optional minimum ThreatCanvas Priority Score from 0 through 100.' },
+        minimumPriority: { type: 'number', minimum: 0, maximum: 100, description: 'Optional minimum Outpost Priority Score from 0 through 100.' },
         limit: { type: 'integer', minimum: 1, maximum: 50, description: 'Maximum number of findings to return; defaults to 20.' },
       }),
       execute: wrap((input) => {
@@ -94,7 +94,7 @@ export function createWebMcpTools(api: WorkspaceApi): WebMcpTool[] {
     {
       name: 'inspect_finding',
       title: 'Inspect a security finding',
-      description: 'Returns complete evidence, reasoning, remediation guidance, analyst notes, relationships, and scoring detail for one ThreatCanvas finding. The result supports an informed decision before workspace state changes.',
+      description: 'Returns complete evidence, reasoning, remediation guidance, analyst notes, relationships, and scoring detail for one Outpost finding. The result supports an informed decision before workspace state changes.',
       annotations: { readOnlyHint: true, untrustedContentHint: true },
       inputSchema: objectSchema({ findingId }, ['findingId']),
       execute: wrap(({ findingId: value }) => {
@@ -119,7 +119,7 @@ export function createWebMcpTools(api: WorkspaceApi): WebMcpTool[] {
     {
       name: 'set_finding_status',
       title: 'Set finding status',
-      description: 'Assigns an analyst-chosen workflow status to a ThreatCanvas finding and records the reason in the activity trail. Human-locked findings reject automatic status changes.',
+      description: 'Assigns an analyst-chosen workflow status to a Outpost finding and records the reason in the activity trail. Human-locked findings reject automatic status changes.',
       annotations: { readOnlyHint: false, untrustedContentHint: false },
       inputSchema: objectSchema({ findingId, status: { type: 'string', enum: STATUSES, description: 'New workflow status: open, investigating, accepted, scheduled, or resolved.' }, reason }, ['findingId', 'status', 'reason']),
       execute: wrap((input) => {
@@ -132,7 +132,7 @@ export function createWebMcpTools(api: WorkspaceApi): WebMcpTool[] {
     {
       name: 'add_finding_note',
       title: 'Add a finding note',
-      description: 'Appends analysis or context to a ThreatCanvas finding without changing its rating. Notes remain visible to the analyst and return as untrusted user-authored content in later inspections.',
+      description: 'Appends analysis or context to a Outpost finding without changing its rating. Notes remain visible to the analyst and return as untrusted user-authored content in later inspections.',
       annotations: { readOnlyHint: false, untrustedContentHint: true },
       inputSchema: objectSchema({ findingId, note: { type: 'string', minLength: 2, maxLength: 1200, description: 'Analysis or contextual note to append to the finding.' }, authorType: { type: 'string', enum: ['agent', 'human'], default: 'agent', description: 'Provenance label for the note author; defaults to agent.' } }, ['findingId', 'note']),
       execute: wrap((input) => {
@@ -146,7 +146,7 @@ export function createWebMcpTools(api: WorkspaceApi): WebMcpTool[] {
     {
       name: 'compare_findings',
       title: 'Compare security findings',
-      description: 'Persists a visible comparison of two to six ThreatCanvas findings and returns their severity, impact, exploitability, confidence, effort, priority, and risk-to-effort values.',
+      description: 'Persists a visible comparison of two to six Outpost findings and returns their severity, impact, exploitability, confidence, effort, priority, and risk-to-effort values.',
       annotations: { readOnlyHint: false, untrustedContentHint: true },
       inputSchema: objectSchema({ findingIds: { type: 'array', minItems: 2, maxItems: 6, uniqueItems: true, items: findingId, description: 'Two to six unique finding identifiers to compare visibly.' } }, ['findingIds']),
       execute: wrap((input) => {
@@ -158,7 +158,7 @@ export function createWebMcpTools(api: WorkspaceApi): WebMcpTool[] {
     {
       name: 'reprioritize_findings',
       title: 'Reprioritize findings',
-      description: 'Persists a user-approved relative priority order for a selected group of ThreatCanvas findings. Human-locked findings reject automatic reprioritization.',
+      description: 'Persists a user-approved relative priority order for a selected group of Outpost findings. Human-locked findings reject automatic reprioritization.',
       annotations: { readOnlyHint: false, untrustedContentHint: false },
       inputSchema: objectSchema({ findingIds: { type: 'array', minItems: 2, maxItems: 18, uniqueItems: true, items: findingId, description: 'Complete set of unique finding identifiers being reordered.' }, priorityOrder: { type: 'array', minItems: 2, maxItems: 18, uniqueItems: true, items: findingId, description: 'The same finding identifiers in the approved highest-to-lowest priority order.' }, reason }, ['findingIds', 'priorityOrder', 'reason']),
       execute: wrap((input) => {
@@ -171,7 +171,7 @@ export function createWebMcpTools(api: WorkspaceApi): WebMcpTool[] {
     {
       name: 'calculate_risk_summary',
       title: 'Calculate risk summary',
-      description: 'Returns the active workspace exposure score, severity distribution, remediation progress, and highest-priority findings using the transparent ThreatCanvas Priority Score.',
+      description: 'Returns the active workspace exposure score, severity distribution, remediation progress, and highest-priority findings using the transparent Outpost Priority Score.',
       annotations: { readOnlyHint: true, untrustedContentHint: false },
       inputSchema: objectSchema({}),
       execute: wrap(() => {
@@ -185,7 +185,7 @@ export function createWebMcpTools(api: WorkspaceApi): WebMcpTool[] {
       description: 'Creates and persists a visible capacity-bounded remediation sprint. Omitted finding IDs trigger automatic selection by risk, effort, or risk-to-effort while preserving accepted risk, resolved work, human locks, and prior human exclusions. The action schedules work without marking findings resolved.',
       annotations: { readOnlyHint: false, untrustedContentHint: false },
       inputSchema: objectSchema({
-        findingIds: { type: 'array', minItems: 1, maxItems: 18, uniqueItems: true, items: findingId, description: 'Optional explicit findings to schedule. When omitted, ThreatCanvas automatically selects eligible findings.' },
+        findingIds: { type: 'array', minItems: 1, maxItems: 18, uniqueItems: true, items: findingId, description: 'Optional explicit findings to schedule. When omitted, Outpost automatically selects eligible findings.' },
         sprintName: { type: 'string', minLength: 2, maxLength: 80, description: 'Visible sprint name; defaults to Priority reduction sprint.' },
         capacityDays: { type: 'number', minimum: 0.5, maximum: 60, description: 'Hard engineering capacity from 0.5 through 60 days.' },
         prioritizeBy: { type: 'string', enum: ['risk', 'effort', 'risk_to_effort'], default: 'risk', description: 'Automatic selection strategy used when findingIds is omitted; defaults to risk.' },
@@ -197,7 +197,7 @@ export function createWebMcpTools(api: WorkspaceApi): WebMcpTool[] {
         const sprint = input.findingIds === undefined
           ? api.optimizeSprint(name, capacity, mode, 'agent')
           : api.createSprint(assertStringArray(input.findingIds, 'findingIds', { min: 1, max: 18 }), name, capacity, 'agent');
-        if (!sprint) throw new Error('ThreatCanvas could not create the remediation sprint.');
+        if (!sprint) throw new Error('Outpost could not create the remediation sprint.');
         const usedDays = sprint.findingIds.reduce((sum, id) => sum + api.inspectFinding(id).effortDays, 0);
         return result({ ok: true, selection: input.findingIds === undefined ? 'automatic' : 'explicit', prioritizeBy: mode, usedDays, sprint });
       }),
@@ -236,7 +236,7 @@ export function createWebMcpTools(api: WorkspaceApi): WebMcpTool[] {
     {
       name: 'get_activity_history',
       title: 'Get activity history',
-      description: 'Returns recent human, agent, and system actions from the active ThreatCanvas review, including provenance that distinguishes analyst decisions from agent recommendations.',
+      description: 'Returns recent human, agent, and system actions from the active Outpost review, including provenance that distinguishes analyst decisions from agent recommendations.',
       annotations: { readOnlyHint: true, untrustedContentHint: true },
       inputSchema: objectSchema({ limit: { type: 'integer', minimum: 1, maximum: 100, description: 'Maximum number of newest activity entries to return; defaults to 25.' } }),
       execute: wrap((input) => {
@@ -247,7 +247,7 @@ export function createWebMcpTools(api: WorkspaceApi): WebMcpTool[] {
     {
       name: 'reset_demo_workspace',
       title: 'Reset demo workspace',
-      description: 'Restores the entire ThreatCanvas demo to its original seeded state after exact confirmation. The result contains only reset status and the restored finding count.',
+      description: 'Restores the entire Outpost demo to its original seeded state after exact confirmation. The result contains only reset status and the restored finding count.',
       annotations: { readOnlyHint: false, untrustedContentHint: false },
       inputSchema: objectSchema({ confirmation: { type: 'string', const: 'RESET', description: 'Exact confirmation token RESET.' } }, ['confirmation']),
       execute: wrap((input) => {

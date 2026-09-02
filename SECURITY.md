@@ -1,6 +1,6 @@
 # Security policy
 
-ThreatCanvas is a defensive demonstration application. Its seed data is intentionally fictional and contains no credentials, private vulnerability records, real customer systems, exploit payloads, or instructions for compromising a target.
+Outpost is a defensive demonstration application. Its seed data is intentionally fictional and contains no credentials, private vulnerability records, real customer systems, exploit payloads, or instructions for compromising a target.
 
 ## Security properties
 
@@ -19,4 +19,4 @@ Please do not include secrets, personal data, production target details, or weap
 
 ## Scope
 
-Security reports about the ThreatCanvas source, page-side WebMCP schemas, input validation, state-integrity rules, or deployment configuration are in scope. Vulnerabilities in fictional seed records and requests for offensive target analysis are out of scope.
+Security reports about the Outpost source, page-side WebMCP schemas, input validation, state-integrity rules, or deployment configuration are in scope. Vulnerabilities in fictional seed records and requests for offensive target analysis are out of scope.

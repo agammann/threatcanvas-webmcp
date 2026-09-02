@@ -2,7 +2,7 @@
 
 ## 0:00–0:25 — Understand the product
 
-Open the dashboard. Confirm that ThreatCanvas is a complete security triage workspace with 18 fictional findings, practical priority scores, evidence, visible progress, and a WebMCP-ready status.
+Open the dashboard. Confirm that Outpost is a complete security triage workspace with 18 fictional findings, practical priority scores, evidence, visible progress, and a WebMCP-ready status.
 
 ## 0:25–0:55 — Inspect human judgment
 

@@ -1,14 +1,14 @@
-# ThreatCanvas
+# Outpost
 
 **A human-in-the-loop security triage workspace where analysts and AI agents investigate findings, preserve judgment, and build explainable remediation sprints through browser-native WebMCP tools.**
 
-ThreatCanvas is a complete OpenAI WebMCP Challenge project. It ships a polished manual application and exposes the same domain operations to compatible agents with `document.modelContext.registerTool(...)`. The UI and every WebMCP tool mutate one shared, durable browser workspace—no shadow database, fake tool buttons, or DOM-click simulation.
+Outpost is a complete OpenAI WebMCP Challenge project. It ships a polished manual application and exposes the same domain operations to compatible agents with `document.modelContext.registerTool(...)`. The UI and every WebMCP tool mutate one shared, durable browser workspace—no shadow database, fake tool buttons, or DOM-click simulation.
 
-![ThreatCanvas security triage dashboard](./demo/screenshots/01-dashboard.png)
+![Outpost security triage dashboard](./demo/screenshots/01-dashboard.png)
 
 ## Why WebMCP fits
 
-Security triage is structured but contextual. Agents are good at scanning many findings, comparing evidence, and fitting work into a limited sprint. Humans must retain control of severity, acceptance, and scheduling decisions. Without WebMCP, an agent has to infer the page, locate controls, click through menus, and guess whether a change worked. ThreatCanvas instead exposes explicit, schema-validated capabilities with visible effects and provenance.
+Security triage is structured but contextual. Agents are good at scanning many findings, comparing evidence, and fitting work into a limited sprint. Humans must retain control of severity, acceptance, and scheduling decisions. Without WebMCP, an agent has to infer the page, locate controls, click through menus, and guess whether a change worked. Outpost instead exposes explicit, schema-validated capabilities with visible effects and provenance.
 
 Humans can:
 
@@ -30,7 +30,7 @@ Human locks are enforced in the domain layer. An agent cannot change a locked ra
 
 ## WebMCP implementation
 
-ThreatCanvas feature-detects the current imperative API on `document.modelContext`, with the deprecated `navigator.modelContext` location only as a compatibility fallback. Fourteen tools are registered with JSON Schema inputs, focused descriptions, and current `readOnlyHint` / `untrustedContentHint` annotations. An `AbortController` unregisters the page's tool set during React cleanup.
+Outpost feature-detects the current imperative API on `document.modelContext`, with the deprecated `navigator.modelContext` location only as a compatibility fallback. Fourteen tools are registered with JSON Schema inputs, focused descriptions, and current `readOnlyHint` / `untrustedContentHint` annotations. An `AbortController` unregisters the page's tool set during React cleanup.
 
 The tool handlers call the same immutable functions used by the React interface:
 

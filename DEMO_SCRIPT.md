@@ -1,10 +1,10 @@
-# ThreatCanvas demo script
+# Outpost demo script
 
 Target runtime: 2 minutes 30 seconds to 2 minutes 50 seconds. Keep the narration natural and ensure the final YouTube video remains under three minutes with an audible audio stream.
 
 ## 0:00–0:20 — Problem and promise
 
-“Security teams do not need another opaque risk score or an agent that silently changes their backlog. ThreatCanvas is a human-in-the-loop triage workspace where analysts keep judgment and agents accelerate the repetitive work.”
+“Security teams do not need another opaque risk score or an agent that silently changes their backlog. Outpost is a human-in-the-loop triage workspace where analysts keep judgment and agents accelerate the repetitive work.”
 
 Show the dashboard, exposure, progress, finding board, activity rail, and WebMCP-ready badge.
 
@@ -20,7 +20,7 @@ Open F-101.
 
 Open About WebMCP.
 
-“Without WebMCP, an agent must infer controls and simulate clicks. ThreatCanvas registers fourteen browser-native tools on `document.modelContext`. The tools use JSON Schema, current safety annotations, and the exact same validated workspace functions as the UI.”
+“Without WebMCP, an agent must infer controls and simulate clicks. Outpost registers fourteen browser-native tools on `document.modelContext`. The tools use JSON Schema, current safety annotations, and the exact same validated workspace functions as the UI.”
 
 Show the shared-state diagram and tool catalog.
 
@@ -46,12 +46,12 @@ Use this prompt:
 
 Open Remediation Sprint.
 
-“ThreatCanvas selects a risk-to-effort mix that fits exactly inside the engineering capacity. It schedules work but never claims a finding is resolved. The analyst can remove scope, change capacity, and rebalance. Manual exclusions and locked choices are preserved.”
+“Outpost selects a risk-to-effort mix that fits exactly inside the engineering capacity. It schedules work but never claims a finding is resolved. The analyst can remove scope, change capacity, and rebalance. Manual exclusions and locked choices are preserved.”
 
 ## 2:28–2:45 — Close
 
 Open Activity.
 
-“Every decision remains attributable to a human, agent, or system. ThreatCanvas shows what WebMCP is best at: giving agents structured application capabilities while keeping consequential judgment visible, reversible, and human-controlled.”
+“Every decision remains attributable to a human, agent, or system. Outpost shows what WebMCP is best at: giving agents structured application capabilities while keeping consequential judgment visible, reversible, and human-controlled.”
 
 End on the dashboard with repository and live URL titles visible in the video description, not as temporary on-screen placeholders.

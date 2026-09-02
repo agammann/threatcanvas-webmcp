@@ -1,6 +1,6 @@
-import { ThreatCanvasApp } from '@/components/threatcanvas-app';
+import { OutpostApp } from '@/components/threatcanvas-app';
 
 export default function Home() {
-  return <ThreatCanvasApp />;
+  return <OutpostApp />;
 }
 

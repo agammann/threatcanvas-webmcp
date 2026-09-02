@@ -1,6 +1,6 @@
 # WebMCP tool guide
 
-ThreatCanvas exposes fourteen browser-native tools from the rendered page. The app checks `document.modelContext` first and registers each tool with `registerTool`. Every handler calls the same `WorkspaceApi` as the manual UI, so the agent and analyst always see one shared workspace.
+Outpost exposes fourteen browser-native tools from the rendered page. The app checks `document.modelContext` first and registers each tool with `registerTool`. Every handler calls the same `WorkspaceApi` as the manual UI, so the agent and analyst always see one shared workspace.
 
 ## Tool catalog
 

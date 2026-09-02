@@ -1,6 +1,6 @@
 # Architecture
 
-ThreatCanvas is a browser-local, human-in-the-loop security triage system. Its central design constraint is that the user and the agent must act on one inspectable source of truth.
+Outpost is a browser-local, human-in-the-loop security triage system. Its central design constraint is that the user and the agent must act on one inspectable source of truth.
 
 ## Data flow
 
@@ -18,7 +18,7 @@ ThreatCanvas is a browser-local, human-in-the-loop security triage system. Its c
 
 ## State integrity
 
-Each mutation creates a new workspace state, records actor provenance, persists the update, and causes the visible interface to rerender. The UI retains a bounded in-memory undo stack for analyst operations. Refresh persistence is versioned under the `threatcanvas.workspace.v1` browser key.
+Each mutation creates a new workspace state, records actor provenance, persists the update, and causes the visible interface to rerender. The UI retains a bounded in-memory undo stack for analyst operations. Refresh persistence is versioned under the `outpost-workspace-v1` browser key.
 
 The seeded `F-104` record demonstrates a human lock. Agent-authored severity, status, and reprioritization operations are rejected in the domain layer rather than merely disabled in the UI. Locks therefore protect the same invariant regardless of the entry point.
 
@@ -26,7 +26,7 @@ Sprint creation enforces engineering-day capacity. Rebalancing first preserves l
 
 ## Priority model
 
-ThreatCanvas uses an intentionally compact project-specific model, not CVSS:
+Outpost uses an intentionally compact project-specific model, not CVSS:
 
 ```text
 (severity × 5 + exploitability × 8 + impact × 8) × confidence
