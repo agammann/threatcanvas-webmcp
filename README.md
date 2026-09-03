@@ -4,7 +4,7 @@
 
 Outpost is a complete OpenAI WebMCP Challenge project. It ships a polished manual application and exposes the same domain operations to compatible agents with `document.modelContext.registerTool(...)`. The UI and every WebMCP tool mutate one shared, durable browser workspace—no shadow database, fake tool buttons, or DOM-click simulation.
 
-![Outpost security triage dashboard]
+
 
 ## Why WebMCP fits
 
